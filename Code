@@ -1,0 +1,95 @@
+# ANALISIS EXPLOTARIO Y DESCRIPTIVO
+#Cargamos las librerias principales
+library(data.table)
+library(dplyr)
+library(caret)
+library(scales)
+library(ggplot2)
+library(stringi)
+library(stringr)
+library(dataPreparation)
+library(knitr)
+library(kableExtra)
+library(ggpubr)
+library(tictoc)
+library(ggeasy)
+library(lubridate)
+library(inspectdf)
+library(ranger)
+#Fijamos Directorio, Cargamos el dataset y lo inspeccionamos con la funcion head()
+setwd('C:/Users/Hector/Desktop/Ainara/BiWheels')
+datoscitibike <- fread(file="2020citibike.csv", nThread = 2)
+head(datoscitibike) #observamos que tenemos un data.frame de 1.680 observaciones y 15 variables
+#E.D.A. (Exploratory Data Analysis)
+#categorical plot
+x<- inspect_cat(datoscitibike)
+show_plot(x)
+#correlations in numeric columns
+x<- inspect_cor(datoscitibike)
+show_plot(x)
+#feature imbalance barplot
+x<- inspect_imb(datoscitibike)
+show_plot(x)
+#memory usage barplot
+x<- inspect_mem(datoscitibike)
+show_plot(x)
+#missingness barplot
+x<- inspect_na(datoscitibike)
+show_plot(x)
+#histograms for numeric columns
+x<- inspect_num(datoscitibike)
+show_plot(x)
+#barplot of columns types
+x<- inspect_types(datoscitibike )
+show_plot(x)
+#Renombramos las variables tal y como aparecen en la pagina web para que no haya confusiones de interpretacion
+names(datoscitibike)[1]<- c('tripduration')
+names(datoscitibike)[2]<- c('starttime')
+names(datoscitibike)[3]<- c('stoptime')
+names(datoscitibike)[4]<- c('start.station.id')
+names(datoscitibike)[5]<- c('start.station.name')
+names(datoscitibike)[6]<- c('start.station.latitude')
+names(datoscitibike)[7]<- c('start.station.longitude')
+names(datoscitibike)[8]<- c('end.station.id')
+names(datoscitibike)[9]<- c('end.station.name')
+names(datoscitibike)[10]<- c('end.station.latitude')
+names(datoscitibike)[11]<- c('end.station.longitude')
+names(datoscitibike)[12]<- c('bikeid')
+names(datoscitibike)[13]<- c('usertype')
+names(datoscitibike)[14]<- c('birth.year')
+names(datoscitibike)[15]<- c('gender')
+#comprobamos si se han cambiado los nombres correctamente
+names(datoscitibike)
+#Hacemos las transformaciones identificadas en los apartados anteriores
+#convertimos a formato fecha las variables starttime y stoptime
+datoscitibike$fe_starttime <- ymd_hms(datoscitibike$starttime)
+datoscitibike$fe_stoptime <- ymd_hms(datoscitibike$stoptime)
+datoscitibike$tripduration <- as.integer(datoscitibike$tripduration)
+#convertimos a formato factor las variables gender y usertype
+datoscitibike$gender <- as.factor(datoscitibike$gender)
+datoscitibike$usertype <- as.factor(datoscitibike$usertype)
+#Procedemos al Feature Engineering 1: variables simples
+#creamos diferentes variables relacionadas con fechas
+datoscitibike$fe_starttime_month <- month(datoscitibike$fe_starttime)
+datoscitibike$fe_stoptime_month <- month(datoscitibike$fe_stoptime)
+datoscitibike$fe_starttime_day<- day(datoscitibike$fe_starttime)
+datoscitibike$fe_stoptime_day<- day(datoscitibike$fe_stoptime)
+datoscitibike$fe_starttime_wday<- wday(datoscitibike$fe_starttime, label = TRUE, abbr = TRUE)
+datoscitibike$fe_stoptime_wday<- wday(datoscitibike$fe_stoptime, label = TRUE, abbr = TRUE)
+datoscitibike$fe_starttime_hour<- hour(datoscitibike$fe_starttime)
+datoscitibike$fe_stopttime_hour<- hour(datoscitibike$fe_stoptime)
+#creamos una variable que mida 'tripduration' en minutos en vez de segundos
+datoscitibike$fe_tripduration <- datoscitibike$tripduration / 60
+#Renombramos la variable objetivo y analizamos su balanceo
+datoscitibike$fe_usertype <- ifelse(datoscitibike$usertype == '""Subscriber""', 'Si', 'No')
+frecuencia1<- round(prop.table(table(datoscitibike$fe_usertype))*100, 2)
+kable(frecuencia1)
+
+
+
+
+
+
+
+
+
